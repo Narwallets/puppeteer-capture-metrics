@@ -97,7 +97,7 @@ let globalBrowserIsOpen = false;
 export async function processRef() {
     //---
     try {
-        console.log("pupeteer processRef start")
+        console.log(new Date().toISOString(), "pupeteer processRef start")
         browser = await puppeteer.launch({
             headless: true,
             slowMo: 0,
@@ -116,7 +116,7 @@ export async function processRef() {
         } catch (ex) {
             console.error("err at Ref process", ex)
         } finally {
-            console.log("pupeteer processRef finally")
+            console.log(new Date().toISOString(), "pupeteer processRef finally")
             globalBrowserIsOpen = false;
             await browser.close()
         }
