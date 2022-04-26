@@ -1,6 +1,7 @@
 import { writeFileSync } from "fs";
 import { Browser, ElementHandle, Page } from "puppeteer"
 const puppeteer = require('puppeteer')
+const fetch = require('node-fetch')
 
 export interface RefPuppeteerData {
     octStNearApr: number
@@ -106,12 +107,12 @@ export async function processRef() {
         globalBrowserIsOpen = true;
         try {
             if (await goToRef([OCT_STNEAR, META_STNEAR, WNEAR_STNEAR])) {
-                let data:Record<string,any> = {}
+                let data: Record<string, any> = {}
                 data.octStNearApr = await getPercentage(OCT_STNEAR)
                 data.metaStNearApr = await getPercentage(META_STNEAR)
                 data.wNearStNearApr = await getPercentage(WNEAR_STNEAR)
                 data.lastObtainedTimeMs = Date.now()
-                writeFileSync("puppeteer-result.json",JSON.stringify(data))
+                writeFileSync("puppeteer-result.json", JSON.stringify(data))
             }
         } catch (ex) {
             console.error("err at Ref process", ex)
@@ -125,4 +126,61 @@ export async function processRef() {
     }
 }
 
-processRef()
+type TrisolarisDataV2Item = {
+    id: number;
+    poolId: number;
+    lpAddress: string;
+    totalSupply: number;
+    totalStaked: number;
+    totalStakedInUSD: number;
+    totalRewardRate: number;
+    allocPoint: number;
+    apr: number;
+    apr2: number;
+    chefVersion: string
+}
+
+function extract(data:TrisolarisDataV2Item[], poolId:number, name:string, punctual:Record<string, any>){
+    const item = data.find(item => item.poolId == poolId)
+    if (item) {
+        punctual[`trisolaris_${name}_apr`] = item.apr + item.apr2
+        punctual[`trisolaris_${name}_supply`] = (item.totalSupply/1e18).toFixed(2)
+    }
+}
+
+async function processTriSolaris() {
+    //---
+    try {
+        console.log(new Date().toISOString(), "processTrisolaris start")
+        const URL = "https://cdn.trisolaris.io/datav2.json"
+        let result = await fetch(URL);
+        let data = await result.json() as TrisolarisDataV2Item[];
+        try {
+
+            let punctual: Record<string, any> = {}
+            extract(data,11,"xTRI_stNEAR",punctual)
+            extract(data,12,"stNEAR_wNear",punctual)
+            extract(data,22,"liNEAR_wNear",punctual)
+
+            writeFileSync("trisolaris-result.json", JSON.stringify(punctual))
+        }
+        catch (ex) {
+            console.error("err processing fetch result at processTriSolaris", ex)
+        }
+        finally {
+            console.log(new Date().toISOString(), "processTrisolaris finally")
+        }
+    }
+    catch (ex) {
+        console.error("err retrieving " + URL, ex)
+    }
+
+}
+
+async function process() {
+    await processTriSolaris()
+    await processRef()
+}
+
+
+process()
