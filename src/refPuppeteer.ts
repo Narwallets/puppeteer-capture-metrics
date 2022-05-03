@@ -159,6 +159,7 @@ async function processTriSolaris() {
 
             let punctual: Record<string, any> = {}
             extract(data,11,"xTRI_stNEAR",punctual)
+            extract(data,5,"TRI_wNEAR",punctual)
             extract(data,12,"stNEAR_wNear",punctual)
             extract(data,22,"liNEAR_wNear",punctual)
 
