@@ -14,11 +14,11 @@
     "rootDir": "src",
     "outDir": "dist",
     "moduleResolution": "node",
-    "sourceMap": false,
+    "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
     "experimentalDecorators": true
   }
-  }
+}

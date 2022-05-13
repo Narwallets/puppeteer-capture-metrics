@@ -143,7 +143,7 @@ type TrisolarisDataV2Item = {
 function extract(data:TrisolarisDataV2Item[], poolId:number, name:string, punctual:Record<string, any>){
     const item = data.find(item => item.poolId == poolId)
     if (item) {
-        punctual[`trisolaris_${name}_apr`] = item.apr + item.apr2
+        punctual[`trisolaris_${name}_apr`] = item.apr + (item.apr2||0)
         punctual[`trisolaris_${name}_supply`] = (item.totalSupply/1e18).toFixed(2)
     }
 }
