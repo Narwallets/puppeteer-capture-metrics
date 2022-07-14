@@ -17,6 +17,7 @@ const url = "https://app.ref.finance/farms"
 const OCT_STNEAR = 1889
 const META_STNEAR = 1923
 const WNEAR_STNEAR = 535
+const WNEAR_STNEAR_STABLE = 3514
 
 async function goToRef(waitForPools: number[]): Promise<Boolean> {
 
@@ -111,6 +112,7 @@ export async function processRef() {
                 data.octStNearApr = await getPercentage(OCT_STNEAR)
                 data.metaStNearApr = await getPercentage(META_STNEAR)
                 data.wNearStNearApr = await getPercentage(WNEAR_STNEAR)
+                data.wNearStNearStableApr = await getPercentage(WNEAR_STNEAR_STABLE)
                 data.lastObtainedTimeMs = Date.now()
                 writeFileSync("puppeteer-result.json", JSON.stringify(data))
             }
