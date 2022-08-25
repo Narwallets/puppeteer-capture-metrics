@@ -13,30 +13,19 @@ let lastObtainedTimeMs: number = 0;
 
 let browser: Browser
 let page: Page
-const url = "https://app.ref.finance/farms"
-const OCT_STNEAR = 1889
-const META_STNEAR = 1923
-const WNEAR_STNEAR = 535
-const WNEAR_STNEAR_STABLE = 3514
+const farmUrl = "https://app.ref.finance/v2farms/"
+const WNEAR_STNEAR_STABLE = "3514-r"
 
-async function goToRef(waitForPools: number[]): Promise<Boolean> {
+async function goToRefFarm(waitForPool: number|string): Promise<Boolean> {
 
     page = await browser.newPage()
-    await page.goto(url)
+    await page.goto(`${farmUrl}${waitForPool}`)
     try {
-        for (let poolId of waitForPools) {
-            try {
-                await page.waitForSelector(`div[id="${poolId}"]`, { timeout: 20000 })
-            }
-            catch (ex) {
-                console.error("waitForSelector (1)", poolId, ex)
-                return false;
-            }
-        }
+        await page.waitForSelector(`div.poolbaseInfo`, { timeout: 20000 })
         return true;
     }
     catch (ex) {
-        console.error("waitForSelector (2)", ex)
+        console.error("waitForSelector (1)", waitForPool, ex)
     }
     return false;
 }
@@ -69,19 +58,23 @@ async function findPoolId(farmPair: string): Promise<number> {
 }
 */
 
-async function getPercentage(poolId: number): Promise<number> {
+async function getPercentage(poolId: number|string): Promise<number> {
     try {
         // If there are more than one farm (one active and other inactives)
         // we can have MORE THAN ONE div id="xxx"
-        let selector = `div[id="${poolId}"]:not(.hidden)`
+        if(!await goToRefFarm(poolId)) return 0
+        let selector = `div.poolbaseInfo:not(.hidden)`
         let allFarms = await page.$$(selector)
         for (let container of allFarms) {
-            let percentageText: string = await container.$eval('div[data-type="info"]', element => (element as HTMLElement).innerText) || "0"
-            let pos = percentageText.indexOf("%")
-            if (pos > 0) {
-                let asNumber = Number(percentageText.slice(0, pos));
-                if (!isNaN(asNumber)) {
-                    return asNumber;
+            let percentageElementParentHandler: ElementHandle<HTMLElement> | null = await container.$eval('div[data-for]', (element, poolId) => (element as HTMLElement).getAttribute("data-for")?.includes(`aprIdv2.ref-finance.near@${poolId}`) ? element : null)
+            if(percentageElementParentHandler) {
+                let percentageText: string = await percentageElementParentHandler.$eval("label.text-base", element => (element as HTMLElement).innerHTML || "0")
+                let pos = percentageText.indexOf("%")
+                if (pos > 0) {
+                    let asNumber = Number(percentageText.slice(0, pos));
+                    if (!isNaN(asNumber)) {
+                        return asNumber;
+                    }
                 }
             }
         }
@@ -101,21 +94,16 @@ export async function processRef() {
     try {
         console.log(new Date().toISOString(), "pupeteer processRef start")
         browser = await puppeteer.launch({
-            headless: true,
+            headless: false,
             slowMo: 0,
             devtools: false,
         })
         globalBrowserIsOpen = true;
         try {
-            if (await goToRef([OCT_STNEAR, META_STNEAR, WNEAR_STNEAR])) {
-                let data: Record<string, any> = {}
-                data.octStNearApr = await getPercentage(OCT_STNEAR)
-                data.metaStNearApr = await getPercentage(META_STNEAR)
-                data.wNearStNearApr = await getPercentage(WNEAR_STNEAR)
-                data.wNearStNearStableApr = await getPercentage(WNEAR_STNEAR_STABLE)
-                data.lastObtainedTimeMs = Date.now()
-                writeFileSync("puppeteer-result.json", JSON.stringify(data))
-            }
+            let data: Record<string, any> = {}
+            data.wNearStNearStableApr = await getPercentage(WNEAR_STNEAR_STABLE)
+            data.lastObtainedTimeMs = Date.now()
+            writeFileSync("puppeteer-result.json", JSON.stringify(data))
         } catch (ex) {
             console.error("err at Ref process", ex)
         } finally {
