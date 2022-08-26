@@ -64,34 +64,34 @@ async function getPercentage(poolId: number|string): Promise<number> {
         // If there are more than one farm (one active and other inactives)
         // we can have MORE THAN ONE div id="xxx"
         if(!await goToRefFarm(poolId)) return 0
-        let selector = `div.poolbaseInfo:not(.hidden)`
-        let allFarms = await page.$$(selector)
-        for (let container of allFarms) {
-            let percentageElementParentHandler: ElementHandle<HTMLElement> | null = 
-                await container.$eval('div[data-for]', (element, poolId) =>
-                    {
-                       const dataFor = (element as HTMLElement).getAttribute("data-for")
-                       if (dataFor && dataFor.includes(`aprIdv2.ref-finance.near@${poolId}`)) {
-                            return element
-                       }
-                       else return null;
-                    })
-            if(percentageElementParentHandler) {
-                let percentageText: string = await percentageElementParentHandler.$eval("label.text-base", element => (element as HTMLElement).innerHTML || "0")
-                let pos = percentageText.indexOf("%")
-                if (pos > 0) {
-                    let asNumber = Number(percentageText.slice(0, pos));
-                    if (!isNaN(asNumber)) {
-                        return asNumber;
-                    }
+
+        await page.waitForSelector("div.poolbaseInfo")
+        const percentageText = await page.evaluate(() => {
+            const poolBaseInfoElement: Element = document.getElementsByClassName("poolbaseInfo")[0]
+            const poolBaseInfoDivs: Element[] = Array.from(poolBaseInfoElement.getElementsByTagName("div"))
+            const elementWithDataForAttribute: Element = poolBaseInfoDivs.filter(e => e.getAttribute('data-for') && e.getAttribute('data-for')?.includes("aprIdv2.ref-finance.near@") ? e.getAttribute('data-for') : false)[0]
+            const elementWithPercentage: Element | null = elementWithDataForAttribute.querySelector("label.text-base")
+            return elementWithPercentage ? elementWithPercentage.innerHTML : false
+        })
+        
+        if(percentageText) {
+            let pos = percentageText.indexOf("%")
+            if (pos > 0) {
+                let asNumber = Number(percentageText.slice(0, pos));
+                if (!isNaN(asNumber)) {
+                    return asNumber;
                 }
             }
         }
         // not found / no farm active
-        return 0;
+        throw Error("Not found");
 
     } catch (err) {
         console.log(err)
+        await page.screenshot({
+            path: "./screenshot.png",
+            fullPage: true
+        })
         return 0;
     }
 
