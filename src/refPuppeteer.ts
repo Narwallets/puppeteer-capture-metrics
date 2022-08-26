@@ -67,7 +67,15 @@ async function getPercentage(poolId: number|string): Promise<number> {
         let selector = `div.poolbaseInfo:not(.hidden)`
         let allFarms = await page.$$(selector)
         for (let container of allFarms) {
-            let percentageElementParentHandler: ElementHandle<HTMLElement> | null = await container.$eval('div[data-for]', (element, poolId) => (element as HTMLElement).getAttribute("data-for")?.includes(`aprIdv2.ref-finance.near@${poolId}`) ? element : null)
+            let percentageElementParentHandler: ElementHandle<HTMLElement> | null = 
+                await container.$eval('div[data-for]', (element, poolId) =>
+                    {
+                       const dataFor = (element as HTMLElement).getAttribute("data-for")
+                       if (dataFor && dataFor.includes(`aprIdv2.ref-finance.near@${poolId}`)) {
+                            return element
+                       }
+                       else return null;
+                    })
             if(percentageElementParentHandler) {
                 let percentageText: string = await percentageElementParentHandler.$eval("label.text-base", element => (element as HTMLElement).innerHTML || "0")
                 let pos = percentageText.indexOf("%")
@@ -95,7 +103,7 @@ export async function processRef() {
     try {
         console.log(new Date().toISOString(), "pupeteer processRef start")
         browser = await puppeteer.launch({
-            headless: testmode? false: true, // headless on production
+            headless: testmode? false: true, // headless=false only on testmode
             slowMo: 0,
             devtools: false,
         })

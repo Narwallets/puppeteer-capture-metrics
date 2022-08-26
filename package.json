@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "npm run build && cd dist && node --experimental-specifier-resolution=node refPuppeteer.js test",
+    "test": "npm run build && cd dist && node --experimental-specifier-resolution=node refPuppeteer.js test && ls -l puppeteer-result.json && cat puppeteer-result.json",
     "start": "npm run build && cd dist && node --experimental-specifier-resolution=node refPuppeteer.js"
   },
   "keywords": [
