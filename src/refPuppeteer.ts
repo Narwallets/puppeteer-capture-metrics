@@ -1,4 +1,5 @@
 import { writeFileSync } from "fs";
+import { argv, argv0 } from "process";
 import { Browser, ElementHandle, Page } from "puppeteer"
 const puppeteer = require('puppeteer')
 const fetch = require('node-fetch')
@@ -94,7 +95,7 @@ export async function processRef() {
     try {
         console.log(new Date().toISOString(), "pupeteer processRef start")
         browser = await puppeteer.launch({
-            headless: false,
+            headless: testmode? false: true, // headless on production
             slowMo: 0,
             devtools: false,
         })
@@ -173,5 +174,6 @@ async function process() {
     await processRef()
 }
 
-
+let testmode = argv[2]=="test"
+if (testmode) console.log("TESTMODE")
 process()
