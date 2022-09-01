@@ -16,6 +16,7 @@ let browser: Browser
 let page: Page
 const farmUrl = "https://app.ref.finance/v2farms/"
 const WNEAR_STNEAR_STABLE = "3514-r"
+const META_STNEAR_FARM = "1923-r" // https://app.ref.finance/v2farms/1923-r
 
 async function goToRefFarm(waitForPool: number|string): Promise<Boolean> {
 
@@ -111,6 +112,7 @@ export async function processRef() {
         try {
             let data: Record<string, any> = {}
             data.wNearStNearStableApr = await getPercentage(WNEAR_STNEAR_STABLE)
+            data.metaStNearApr = await getPercentage(META_STNEAR_FARM)
             data.lastObtainedTimeMs = Date.now()
             writeFileSync("puppeteer-result.json", JSON.stringify(data))
         } catch (ex) {
