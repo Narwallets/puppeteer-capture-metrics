@@ -23,7 +23,7 @@ async function goToRefFarm(waitForPool: number|string): Promise<void> {
     page = await browser.newPage()
     await page.goto(`${farmUrl}${waitForPool}`)
     try {
-        await page.waitForSelector(`div.poolbaseInfo`, { timeout: testmode? 200 : 40000 })
+        await page.waitForSelector(`div.poolbaseInfo`, { timeout: testmode? 20000 : 40000 })
     }
     catch (ex) {
         console.error("waitForSelector (1)", waitForPool, ex)
