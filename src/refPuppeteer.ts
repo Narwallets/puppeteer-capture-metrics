@@ -18,18 +18,17 @@ const farmUrl = "https://app.ref.finance/v2farms/"
 const WNEAR_STNEAR_STABLE = "3514-r"
 const META_STNEAR_FARM = "1923-r" // https://app.ref.finance/v2farms/1923-r
 
-async function goToRefFarm(waitForPool: number|string): Promise<Boolean> {
+async function goToRefFarm(waitForPool: number|string): Promise<void> {
 
     page = await browser.newPage()
     await page.goto(`${farmUrl}${waitForPool}`)
     try {
-        await page.waitForSelector(`div.poolbaseInfo`, { timeout: 20000 })
-        return true;
+        await page.waitForSelector(`div.poolbaseInfo`, { timeout: testmode? 200 : 40000 })
     }
     catch (ex) {
         console.error("waitForSelector (1)", waitForPool, ex)
+        throw(ex)
     }
-    return false;
 }
 
 /* NOT TESTED 
@@ -62,10 +61,7 @@ async function findPoolId(farmPair: string): Promise<number> {
 
 async function getPercentage(poolId: number|string): Promise<number> {
     try {
-        // If there are more than one farm (one active and other inactives)
-        // we can have MORE THAN ONE div id="xxx"
-        if(!await goToRefFarm(poolId)) return 0
-
+        await goToRefFarm(poolId)
         await page.waitForSelector("div.poolbaseInfo")
         const percentageText = await page.evaluate(() => {
             const poolBaseInfoElement: Element = document.getElementsByClassName("poolbaseInfo")[0]
@@ -85,15 +81,17 @@ async function getPercentage(poolId: number|string): Promise<number> {
             }
         }
         // not found / no farm active
-        throw Error("Not found");
+        throw Error("!percentageText or % not found");
 
     } catch (err) {
-        console.log(err)
-        await page.screenshot({
-            path: "./screenshot.png",
-            fullPage: true
-        })
-        return 0;
+        if (testmode) {
+            console.log(err)
+            await page.screenshot({
+                path: "./screenshot.png",
+                fullPage: true
+            })
+        }
+        throw(err)
     }
 
 }
